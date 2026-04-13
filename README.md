@@ -6,7 +6,7 @@
 [![Powered by Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Built with Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
 
-**Live Demo:** https://your-project.vercel.app
+**Live Demo:** https://bigbang-studio.vercel.app/
 
 ---
 
