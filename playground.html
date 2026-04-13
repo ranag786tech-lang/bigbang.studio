@@ -150,7 +150,14 @@
 
     // Auth Functions
     async function signInWithGitHub() {
-        await supabase.auth.signInWithOAuth({ provider: 'github' });
+    const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'github',
+        options: {
+            redirectTo: 'https://bigbang-studio.vercel.app/playground.html'
+        }
+    });
+    if (error) console.error('GitHub login error:', error);
+    };
     }
 
     async function signInWithEmail() {
