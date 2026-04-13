@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Bang Studio - AI App Builder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Header */
+        .header { background: #111; border-bottom: 1px solid #333; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .hamburger { display: none; font-size: 24px; cursor: pointer; }
+        .logo { font-size: 20px; font-weight: 700; color: #3b82f6; }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .auth-btn { background: #3b82f6; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .auth-btn:hover { background: #2563eb; }
+        .profile { display: none; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+        .profile img { width: 32px; height: 32px; border-radius: 50%; }
+        .profile-dropdown { display: none; position: absolute; top: 45px; right: 0; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; width: 200px; padding: 8px; }
+        .profile-dropdown.active { display: block; }
+        .profile-dropdown button { width: 100%; background: none; border: none; color: #fff; padding: 10px; text-align: left; cursor: pointer; border-radius: 4px; }
+        .profile-dropdown button:hover { background: #333; }
+
+        /* Main */
+        .main { flex: 1; display: flex; overflow: hidden; }
+        .sidebar { width: 280px; background: #111; border-right: 1px solid #333; padding: 20px; overflow-y: auto; transition: 0.3s; }
+        .sidebar.mobile-hidden { transform: translateX(-100%); position: fixed; z-index: 99; height: 100%; }
+        .sidebar h3 { margin-bottom: 15px; font-size: 14px; color: #888; }
+        .project-item { padding: 10px; background: #1a1a1a; border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-size: 13px; }
+        .project-item:hover { background: #222; }
+        .content { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        .prompt-box { display: flex; gap: 10px; margin-bottom: 15px; }
+        .prompt-box input { flex: 1; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 6px; font-size: 15px; }
+        .prompt-box button { background: #3b82f6; border: none; color: #fff; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .prompt-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+        iframe { flex: 1; background: #fff; border: 1px solid #333; border-radius: 8px; }
+        
+        /* Login Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-box { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 30px; width: 90%; max-width: 400px; }
+        .modal-box h2 { margin-bottom: 20px; }
+        .modal-box input { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+        .modal-box button { width: 100%; background: #3b82f6; border: none; color: #fff; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 10px; }
+        .modal-box .github-btn { background: #24292e; }
+        .modal-box .close { background: #333; }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .hamburger { display: block; }
+            .sidebar { position: fixed; transform: translateX(-100%); z-index: 99; height: 100%; }
+            .sidebar.active { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="hamburger" onclick="toggleSidebar()">☰</div>
+            <div class="logo">Big Bang Studio</div>
+        </div>
+        <div class="header-right">
+            <button class="auth-btn" id="loginBtn" onclick="openModal()">Sign In</button>
+            <div class="profile" id="profile">
+                <span id="userName"></span>
+                <img id="userAvatar" src="">
+                <div class="profile-dropdown" id="profileDropdown">
+                    <button onclick="signOut()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="sidebar" id="sidebar">
+            <h3>MY PROJECTS</h3>
+            <div id="projectsList"></div>
+        </div>
+        <div class="content">
+            <div class="prompt-box">
+                <input type="text" id="prompt" placeholder="Describe the app you want to build...">
+                <button id="generateBtn" onclick="generateCode()">Generate</button>
+            </div>
+            <iframe id="preview"></iframe>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-box">
+            <h2>Sign In to Big Bang Studio</h2>
+            <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
+            <div style="text-align: center; margin: 15px 0; color: #666;">or</div>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="signInWithEmail()">Sign In with Email</button>
+            <button onclick="signUpWithEmail()">Sign Up</button>
+            <button class="close" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+<script>
+    const SUPABASE_URL = 'https://tcxwhkwkzekgiurcumjt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHdoa3dremVrZ2l1cmN1bWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNjk0NDEsImV4cCI6MjA5MTY0NTQ0MX0.iVV5gFCMUmzbscTxyY9qNGU0Tg0AzTozrLYbiLSp_kI';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let currentUser = null;
+
+    // Auth State
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+            currentUser = session.user;
+            showProfile();
+            loadProjects();
+        } else {
+            currentUser = null;
+            hideProfile();
+        }
+    });
+
+    // Check user on load
+    checkUser();
+    async function checkUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            currentUser = user;
+            showProfile();
+            loadProjects();
+        }
+    }
+
+    function showProfile() {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('profile').style.display = 'flex';
+        document.getElementById('userName').textContent = currentUser.user_metadata.full_name || currentUser.email;
+        document.getElementById('userAvatar').src = currentUser.user_metadata.avatar_url || 'https://github.com/github.png';
+    }
+
+    function hideProfile() {
+        document.getElementById('loginBtn').style.display = 'block';
+        document.getElementById('profile').style.display = 'none';
+    }
+
+    // Modal
+    function openModal() { document.getElementById('loginModal').classList.add('active'); }
+    function closeModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+    // Auth Functions
+    async function signInWithGitHub() {
+        await supabase.auth.signInWithOAuth({ provider: 'github' });
+    }
+
+    async function signInWithEmail() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else closeModal();
+    }
+
+    async function signUpWithEmail() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else { alert('Check your email to confirm!'); closeModal(); }
+    }
+
+    async function signOut() {
+        await supabase.auth.signOut();
+        document.getElementById('profileDropdown').classList.remove('active');
+    }
+
+    // Profile Dropdown
+    document.getElementById('profile').onclick = () => {
+        document.getElementById('profileDropdown').classList.toggle('active');
+    }
+
+    // Sidebar
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Generate Code
+    async function generateCode() {
+        if (!currentUser) return openModal();
+        
+        const prompt = document.getElementById('prompt').value;
+        if (!prompt) return alert('Prompt likho bhai!');
+        
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+        
+        const res = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        
+        document.getElementById('preview').srcdoc = data.code;
+        
+        // Save to database
+        await supabase.from('projects').insert({
+            user_id: currentUser.id,
+            prompt: prompt,
+            code: data.code
+        });
+        
+        loadProjects();
+        btn.disabled = false;
+        btn.textContent = 'Generate';
+    }
+
+    // Load Projects
+    async function loadProjects() {
+        if (!currentUser) return;
+        const { data } = await supabase.from('projects').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        const list = document.getElementById('projectsList');
+        list.innerHTML = data.map(p => `
+            <div class="project-item" onclick="loadProject('${p.id}')">
+                ${p.prompt.substring(0, 30)}...
+            </div>
+        `).join('');
+    }
+
+    async function loadProject(id) {
+        const { data } = await supabase.from('projects').select('*').eq('id', id).single();
+        document.getElementById('preview').srcdoc = data.code;
+        document.getElementById('prompt').value = data.prompt;
+        if (window.innerWidth < 768) toggleSidebar();
+    }
+</script>
+</body>
+</html>
