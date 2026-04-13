@@ -2,7 +2,7 @@
 
 > Build full-stack web apps using natural language. No code, just ideas.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/big-bang-studio)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://ranag786tech-lang.github.io/bigbang.studio/)
 [![Powered by Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Built with Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
 
@@ -59,5 +59,5 @@ Users sirf apne projects dekh/insert kar sakte hain.
 
 ### **1. Clone Repository**
 ```bash
-git clone https://github.com/your-username/big-bang-studio.git
+git clone https://github.com/ranag786tech-lang.github.io/bigbang.studio/.git
 cd big-bang-studio
