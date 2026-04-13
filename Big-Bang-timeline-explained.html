@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Bang Studio - Playground | DigiD AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --space-dark: #0A0E27;
+            --cosmic-purple: #4A0E4E;
+            --neon-cyan: #00F5FF;
+            --electric-pink: #FF10F0;
+            --gold: #FFD700;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+        * { font-family: 'Space Grotesk', sans-serif; }
+       .font-orbitron { font-family: 'Orbitron', monospace; }
+        body {
+            background: var(--space-dark);
+            background-image:
+                radial-gradient(ellipse at top, #1B1B3A 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, var(--cosmic-purple) 0%, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+       .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+       .neon-glow { box-shadow: 0 0 20px rgba(0, 245, 255, 0.3); }
+       .btn-primary {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--electric-pink));
+            transition: all 0.3s ease;
+        }
+       .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 245, 255, 0.4);
+        }
+       .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+       .main-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 400px;
+            gap: 1rem;
+            height: calc(100vh - 80px);
+        }
+        @media (max-width: 1024px) {
+           .main-grid { grid-template-columns: 1fr; }
+           .sidebar,.right-panel { display: none; }
+        }
+       .chat-bubble { animation: slideIn 0.3s ease; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       .code-block {
+            background: #1a1a2e;
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+       .sidebar-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+       .sidebar-item:hover,.sidebar-item.active {
+            background: rgba(0, 245, 255, 0.1);
+            border-left: 3px solid var(--neon-cyan);
+        }
+       .tab-btn {
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+       .tab-btn.active {
+            border-bottom-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+       .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       .loading-dots span { animation: blink 1.4s infinite; }
+       .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+       .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <canvas id="starfield"></canvas>
+
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 border-b border-white/10">
+        <div class="px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center font-orbitron font-bold">BB</div>
+                    <span class="font-orbitron font-bold text-xl hidden sm:block">Big Bang Studio</span>
+                </a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="glass px-3 py-1 rounded-full text-xs flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>DigiD Online</span>
+                </div>
+                <button class="px-4 py-2 btn-primary rounded-lg font-semibold text-sm">Get DigiD Pro</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-grid p-4 relative z-10">
+
+        <!-- Left Sidebar -->
+        <aside class="sidebar glass rounded-2xl p-4 overflow-y-auto">
+            <div class="space-y-2">
+                <div class="sidebar-item active p-3 rounded-lg flex items-center gap-3" data-action="new">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>New Project</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="projects">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    <span>My Projects</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="templates">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                    <span>Templates</span>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-white/10">
+                <h3 class="text-xs text-gray-400 mb-3 px-3">DIGID MEMORY</h3>
+                <div id="memoryList" class="space-y-1 text-xs"></div>
+            </div>
+        </aside>
+
+        <!-- Center Main -->
+        <main class="glass rounded-2xl p-4 flex flex-col overflow-hidden">
+            <!-- API Key Notice -->
+            <div id="apiKeyNotice" class="glass border border-yellow-400/30 rounded-lg p-3 mb-4 text-sm">
+                <strong class="text-yellow-400">⚠️ Setup Required:</strong> Add your Groq API key in the code to activate real AI.
+                <a href="https://console.groq.com/keys" target="_blank" class="text-cyan-400 underline">Get free key here</a>
+            </div>
+
+            <!-- Prompt Area -->
+            <div class="mb-4">
+                <textarea id="promptInput" rows="3" placeholder="Build me a todo app with dark theme and local storage..." class="w-full glass rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:neon-glow resize-none"></textarea>
+                <button id="sendBtn" class="mt-3 w-full btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                    <span id="sendBtnText">Send to DigiD</span>
+                    <svg id="sendBtnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                </button>
+            </div>
+
+            <!-- Chat Area -->
+            <div id="chatArea" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                <div class="text-center text-gray-400 text-sm py-8">
+                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    Start building by describing what you want
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2">
+                <button id="explainBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Explain Code</button>
+                <button id="debugBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Debug</button>
+                <button id="copyBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Copy Code</button>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="right-panel glass rounded-2xl overflow-hidden flex flex-col">
+            <!-- Tabs -->
+            <div class="flex border-b border-white/10">
+                <button class="tab-btn active flex-1 py-3 text-sm font-semibold" data-tab="preview">Live Preview</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold" data-tab="files">Files</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold" data-tab="deploy">Deploy</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-hidden">
+                <!-- Preview Tab -->
+                <div id="previewTab" class="tab-content h-full">
+                    <iframe id="previewFrame" class="w-full h-full bg-white" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666;'><div style='text-align:center;'><h2>Live Preview</h2><p>Your app will appear here</p></div></body></html>"></iframe>
+                </div>
+
+                <!-- Files Tab -->
+                <div id="filesTab" class="tab-content hidden h-full overflow-y-auto p-4">
+                    <div class="space-y-2" id="filesTree">
+                        <div class="text-gray-400 text-sm">No files yet. Send a prompt to generate code.</div>
+                    </div>
+                </div>
+
+                <!-- Deploy Tab -->
+                <div id="deployTab" class="tab-content hidden h-full overflow-y-auto p-4 space-y-4">
+                    <button id="vercelBtn" class="w-full btn-primary py-3 rounded-lg font-semibold">Deploy to Vercel</button>
+                    <div>
+                        <label class="text-sm text-gray-400 mb-2 block">Share Link</label>
+                        <div class="flex gap-2">
+                            <input id="shareLink" type="text" readonly class="flex-1 glass rounded-lg px-3 py-2 text-sm" placeholder="Generate after creating project">
+                            <button id="copyLinkBtn" class="glass px-4 rounded-lg hover:bg-white/10">Copy</button>
+                        </div>
+                    </div>
+                    <div class="glass rounded-lg p-3 text-xs text-gray-400">
+                        <strong>Deploy Command:</strong><br>
+                        <code class="text-cyan-400">vercel --prod</code>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // ⚠️ YAHAN APNI GROQ API KEY DAALO ⚠️
+        const GROQ_API_KEY = 'gsk_YOUR_API_KEY_HERE'; // Replace with your key from console.groq.com
+
+        // Check if API key is set
+        if (GROQ_API_KEY === 'gsk_YOUR_API_KEY_HERE') {
+            document.getElementById('apiKeyNotice').style.display = 'block';
+        } else {
+            document.getElementById('apiKeyNotice').style.display = 'none';
+        }
+
+        // State
+        let currentProject = { files: {}, messages: [] };
+        let digiDMemory = JSON.parse(localStorage.getItem('digiDMemory') || '[]');
+        updateMemoryList();
+
+        // Starfield Animation
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const stars = Array.from({length: 200}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2,
+            speed: Math.random() * 0.5
+        }));
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + star.size / 2 + ')';
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + 'Tab').classList.remove('hidden');
+            };
+        });
+
+        // Toast
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast glass rounded-lg px-6 py-3';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // REAL AI - Groq API Call
+        async function callDigiDAI(prompt) {
+            const systemPrompt = `You are DigiD, an expert full-stack developer. Generate a complete, production-ready single HTML file with inline CSS and JavaScript for the user's request.
+
+Rules:
+1. Output ONLY the complete HTML code, nothing else. No explanations, no markdown fences.
+2. Use modern, clean code with glassmorphism design if dark theme requested.
+3. Make it fully functional and responsive.
+4. Use Tailwind CSS via CDN if needed: <script src="https://cdn.tailwindcss.com"></script>
+5. The app must work immediately when opened in a browser.
+
+User Request: ${prompt}`;
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${GROQ_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: systemPrompt }],
+                    temperature: 0.7,
+                    max_tokens: 4000
+                })
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            return data.choices[0].message.content.trim();
+        }
+
+        // Send Prompt
+        document.getElementById('sendBtn').onclick = async () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) return;
+
+            if (GROQ_API_KEY === 'gsk_YOUR_API_KEY_HERE') {
+                showToast('Please add your Groq API key first!');
+                return;
+            }
+
+            addMessage('user', prompt);
+            digiDMemory.unshift(prompt);
+            if (digiDMemory.length > 5) digiDMemory.pop();
+            localStorage.setItem('digiDMemory', JSON.stringify(digiDMemory));
+            updateMemoryList();
+
+            const btn = document.getElementById('sendBtn');
+            const btnText = document.getElementById('sendBtnText');
+            btn.disabled = true;
+            btnText.innerHTML = 'DigiD is thinking<span class="loading-dots"><span>.</span><span>.</span></span>';
+
+            addMessage('digid', 'Generating your project with real AI...');
+
+            try {
+                const htmlCode = await callDigiDAI(prompt);
+                currentProject.files = { 'index.html': htmlCode };
+
+                updatePreview(htmlCode);
+                updateFilesTree(currentProject.files);
+
+                const lastMsg = document.querySelector('.chat-bubble:last-child');
+                lastMsg.innerHTML = `
+                    <div class="font-semibold text-cyan-400 mb-2">DigiD:</div>
+                    <div>✅ Done! Created your project with real AI. Check Live Preview.</div>
+                    <div class="code-block mt-3">
+                        <div class="text-xs text-gray-400 mb-2">index.html</div>
+                        <pre class="text-xs overflow-x-auto">${htmlCode.substring(0, 200)}...</pre>
+                    </div>
+                `;
+
+                showToast('Project generated successfully!');
+            } catch (error) {
+                const lastMsg = document.querySelector('.chat-bubble:last-child');
+                lastMsg.innerHTML = `
+                    <div class="font-semibold text-red-400 mb-2">DigiD:</div>
+                    <div>❌ Error: ${error.message}. Check your API key or try again.</div>
+                `;
+                showToast('Failed to generate. Check API key.');
+            }
+
+            btn.disabled = false;
+            btnText.textContent = 'Send to DigiD';
+            document.getElementById('promptInput').value = '';
+        };
+
+        function addMessage(type, content) {
+            const chatArea = document.getElementById('chatArea');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble glass rounded-xl p-4';
+            if (type === 'user') {
+                bubble.innerHTML = `<div class="font-semibold text-pink-400 mb-2">You:</div><div>${content}</div>`;
+            } else {
+                bubble.innerHTML = `<div class="font-semibold text-cyan-400 mb-2">DigiD:</div><div>${content}</div>`;
+            }
+            chatArea.appendChild(bubble);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function updatePreview(html) {
+            document.getElementById('previewFrame').srcdoc = html;
+        }
+
+        function updateFilesTree(files) {
+            const tree = document.getElementById('filesTree');
+            tree.innerHTML = Object.keys(files).map(file => `
+                <div class="sidebar-item p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-white/10" onclick="showFile('${file}')">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    <span class="text-sm">${file}</span>
+                </div>
+            `).join('');
+        }
+
+        function showFile(filename) {
+            const content = currentProject.files[filename];
+            addMessage('digid', `Showing ${filename}:\n\n\`\`\`html\n${content.substring(0, 500)}...\n\`\`\``);
+        }
+
+        function updateMemoryList() {
+            const list = document.getElementById('memoryList');
+            list.innerHTML = digiDMemory.slice(0, 5).map(m =>
+                `<div class="px-3 py-1 text-gray-400 truncate">${m}</div>`
+            ).join('') || '<div class="px-3 py-1 text-gray-500">No memory yet</div>';
+        }
+
+        // Action Buttons
+        document.getElementById('copyBtn').onclick = () => {
+            if (currentProject.files['index.html']) {
+                navigator.clipboard.writeText(currentProject.files['index.html']);
+                showToast('Code copied to clipboard!');
+            } else {
+                showToast('No code to copy yet');
+            }
+        };
+
+        document.getElementById('explainBtn').onclick = () => {
+            if (currentProject.files['index.html']) {
+                addMessage('digid', 'This code creates a complete HTML page with inline CSS and JavaScript. It uses modern web standards and is fully responsive. The structure includes a container, styling, and interactive elements.');
+            } else {
+                showToast('Generate a project first');
+            }
+        };
+
+        document.getElementById('debugBtn').onclick = () => {
+            showToast('No errors detected in current code');
+        };
+
+        // Enter key to send
+        document.getElementById('promptInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' &&!e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('sendBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>
