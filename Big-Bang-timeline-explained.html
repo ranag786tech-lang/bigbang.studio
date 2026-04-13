@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Bang Studio - Playground | DigiD AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --space-dark: #0A0E27;
+            --cosmic-purple: #4A0E4E;
+            --neon-cyan: #00F5FF;
+            --electric-pink: #FF10F0;
+            --gold: #FFD700;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+        * { font-family: 'Space Grotesk', sans-serif; }
+        .font-orbitron { font-family: 'Orbitron', monospace; }
+        body {
+            background: var(--space-dark);
+            background-image: 
+                radial-gradient(ellipse at top, #1B1B3A 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, var(--cosmic-purple) 0%, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow { box-shadow: 0 0 20px rgba(0, 245, 255, 0.3); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--electric-pink));
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 245, 255, 0.4);
+        }
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 400px;
+            gap: 1rem;
+            height: calc(100vh - 80px);
+        }
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .sidebar, .right-panel { display: none; }
+            .mobile-show { display: block !important; }
+        }
+        .chat-bubble {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .code-block {
+            background: #1a1a2e;
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .sidebar-item:hover, .sidebar-item.active {
+            background: rgba(0, 245, 255, 0.1);
+            border-left: 3px solid var(--neon-cyan);
+        }
+        .tab-btn {
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            border-bottom-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading-dots span {
+            animation: blink 1.4s infinite;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <canvas id="starfield"></canvas>
+    
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 border-b border-white/10">
+        <div class="px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button id="hamburger" class="lg:hidden p-2 hover:bg-white/10 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center font-orbitron font-bold">BB</div>
+                <span class="font-orbitron font-bold text-xl hidden sm:block">Big Bang Studio</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="signInBtn" class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm">Sign In</button>
+                <button class="px-4 py-2 btn-primary rounded-lg font-semibold text-sm">Get DigiD Pro</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-grid p-4 relative z-10">
+        
+        <!-- Left Sidebar -->
+        <aside id="sidebar" class="sidebar glass rounded-2xl p-4 overflow-y-auto">
+            <div class="space-y-2">
+                <div class="sidebar-item active p-3 rounded-lg flex items-center gap-3" data-action="new">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>New Project</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="projects">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    <span>My Projects</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="templates">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                    <span>Templates</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="memory">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>DigiD Memory</span>
+                </div>
+                <div class="sidebar-item p-3 rounded-lg flex items-center gap-3" data-action="settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Main -->
+        <main class="glass rounded-2xl p-4 flex flex-col overflow-hidden">
+            <!-- Prompt Area -->
+            <div class="mb-4">
+                <textarea id="promptInput" rows="3" placeholder="Build me a todo app with dark theme..." class="w-full glass rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:neon-glow resize-none"></textarea>
+                <button id="sendBtn" class="mt-3 w-full btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                    <span id="sendBtnText">Send to DigiD</span>
+                    <svg id="sendBtnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                </button>
+            </div>
+
+            <!-- Chat Area -->
+            <div id="chatArea" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                <div class="text-center text-gray-400 text-sm py-8">
+                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    Start building by describing what you want
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2">
+                <button id="explainBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Explain Code</button>
+                <button id="debugBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Debug</button>
+                <button id="copyBtn" class="flex-1 glass py-2 rounded-lg hover:bg-white/10 transition text-sm">Copy Code</button>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="right-panel glass rounded-2xl overflow-hidden flex flex-col">
+            <!-- Tabs -->
+            <div class="flex border-b border-white/10">
+                <button class="tab-btn active flex-1 py-3 text-sm font-semibold" data-tab="preview">Live Preview</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold" data-tab="files">Files</button>
+                <button class="tab-btn flex-1 py-3 text-sm font-semibold" data-tab="deploy">Deploy</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 overflow-hidden">
+                <!-- Preview Tab -->
+                <div id="previewTab" class="tab-content h-full">
+                    <iframe id="previewFrame" class="w-full h-full bg-white" srcdoc="<html><body style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666;'><div style='text-align:center;'><h2>Live Preview</h2><p>Your app will appear here</p></div></body></html>"></iframe>
+                </div>
+
+                <!-- Files Tab -->
+                <div id="filesTab" class="tab-content hidden h-full overflow-y-auto p-4">
+                    <div class="space-y-2" id="filesTree">
+                        <div class="text-gray-400 text-sm">No files yet. Send a prompt to generate code.</div>
+                    </div>
+                </div>
+
+                <!-- Deploy Tab -->
+                <div id="deployTab" class="tab-content hidden h-full overflow-y-auto p-4 space-y-4">
+                    <button id="vercelBtn" class="w-full btn-primary py-3 rounded-lg font-semibold">Deploy to Vercel</button>
+                    <div>
+                        <label class="text-sm text-gray-400 mb-2 block">Share Link</label>
+                        <div class="flex gap-2">
+                            <input id="shareLink" type="text" readonly class="flex-1 glass rounded-lg px-3 py-2 text-sm" placeholder="Generate after creating project">
+                            <button id="copyLinkBtn" class="glass px-4 rounded-lg hover:bg-white/10">Copy</button>
+                        </div>
+                    <div class="glass rounded-lg p-3 text-xs text-gray-400">
+                        <strong>Deploy Command:</strong><br>
+                        <code class="text-cyan-400">vercel --prod</code>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+    <!-- Sign In Modal -->
+    <div id="signInModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full">
+            <h2 class="font-orbitron text-2xl font-bold mb-6">Sign In to Big Bang Studio</h2>
+            <input type="email" id="emailInput" placeholder="Email address" class="w-full glass rounded-lg px-4 py-3 mb-4">
+            <button class="w-full btn-primary py-3 rounded-lg font-semibold mb-4">Continue with Email</button>
+            <div class="text-center text-gray-400 text-sm mb-4">or</div>
+            <button class="w-full glass py-3 rounded-lg font-semibold mb-2 hover:bg-white/10">Continue with Google</button>
+            <button class="w-full glass py-3 rounded-lg font-semibold mb-4 hover:bg-white/10">Continue with GitHub</button>
+            <button id="closeModal" class="w-full text-gray-400 text-sm">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // TODO: Replace generateCode() with fetch('https://api.your-ai.com', {method:'POST', body:prompt}) when backend ready
+        
+        // State
+        let currentProject = { files: {}, messages: [] };
+        let projects = JSON.parse(localStorage.getItem('projects') || '[]');
+        let digiDMemory = JSON.parse(localStorage.getItem('digiDMemory') || '[]');
+
+        // Starfield Animation
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const stars = Array.from({length: 200}, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2,
+            speed: Math.random() * 0.5
+        }));
+        function animateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + star.size / 2 + ')';
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+
+        // Mobile Menu
+        document.getElementById('hamburger').onclick = () => {
+            document.getElementById('sidebar').classList.toggle('mobile-show');
+            document.getElementById('mobileOverlay').classList.toggle('hidden');
+        };
+        document.getElementById('mobileOverlay').onclick = () => {
+            document.getElementById('sidebar').classList.remove('mobile-show');
+            document.getElementById('mobileOverlay').classList.add('hidden');
+        };
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + 'Tab').classList.remove('hidden');
+            };
+        });
+
+        // Sign In Modal
+        document.getElementById('signInBtn').onclick = () => {
+            document.getElementById('signInModal').classList.remove('hidden');
+            document.getElementById('signInModal').classList.add('flex');
+        };
+        document.getElementById('closeModal').onclick = () => {
+            document.getElementById('signInModal').classList.add('hidden');
+            document.getElementById('signInModal').classList.remove('flex');
+        };
+
+        // Toast Notification
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast glass rounded-lg px-6 py-3';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Smart Template System - Simulates AI
+        function generateCode(prompt) {
+            const p = prompt.toLowerCase();
+            
+            if (p.includes('todo')) {
+                return {
+                    'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui; 
+            background: #0A0E27; 
+            color: #fff; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 500px; 
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00F5FF, #FF10F0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input { 
+            flex: 1;
+            padding: 12px; 
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            border-radius: 10px;
+        }
+        button { 
+            padding: 12px 24px; 
+            background: linear-gradient(135deg, #00F5FF, #FF10F0);
+            color: #fff; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { transform: translateY(-2px); }
+        ul { list-style: none; }
+        li { 
+            padding: 12px; 
+            background: rgba(255,255,255,0.05);
+            margin: 8px 0; 
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete { 
+            background: #ff4444; 
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ My Todo List</h1>
+        <div class="input-group">
+            <input type="text" id="todoInput" placeholder="Add a new task...">
+            <button onclick="addTodo()">Add</button>
+        </div>
+        <ul id="todoList"></ul>
+    </div>
+    <script>
+        let todos = [];
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            if (input.value.trim()) {
+                todos.push(input.value);
+                input.value = '';
+                renderTodos();
+            }
+        }
+        function deleteTodo(index) {
+            todos.splice(index, 1);
+            renderTodos();
+        }
+        function renderTodos() {
+            const list = document.getElementById('todoList');
+            list.innerHTML = todos.map((todo, i) => 
+                \`<li>\${todo} <button class="delete" onclick="deleteTodo(\${i})">Delete</button></li>\`
+            ).join('');
+        }
+        document.getElementById('todoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTodo();
+        });
+    <\/script>
+</body>
+</html>`,
+                    'style.css': '/* Styles included in HTML */',
+                    'script.js': '/* Script included in HTML */'
+                };
+            }
+            
+            if (p.includes('calculator')) {
+                return {
+                    'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui;
+            background: #0A0E27;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .calculator {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 320px;
+        }
+        #display {
+            width: 100%;
+            height: 80px;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            border-radius: 10px;
+            color: #00F5FF;
+            font-size: 32px;
+            text-align: right;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        button {
+            padding: 20px;
+            font-size: 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: rgba(255,255,255,0.2); }
+        button.operator { background: linear-gradient(135deg, #00F5FF, #FF10F0); }
+        button.equals { grid-column: span 2; }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" readonly>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="appendValue('/')">/</button>
+            <button onclick="appendValue('*')">×</button>
+            <button onclick="deleteLast()">⌫</button>
+            <button onclick="appendValue('7')">7</button>
+            <button onclick="appendValue('8')">8</button>
+            <button onclick="appendValue('9')">9</button>
+            <button onclick="appendValue('-')" class="operator">-</button>
+            <button onclick="appendValue('4')">4</button>
+            <button onclick="appendValue('5')">5</button>
+            <button onclick="appendValue('6')">6</button>
+            <button onclick="appendValue('+')" class="operator">+</button>
+            <button onclick="appendValue('1')">1</button>
+            <button onclick="appendValue('2')">2</button>
+            <button onclick="appendValue('3')">3</button>
+            <button onclick="calculate()" class="operator equals">=</button>
+            <button onclick="appendValue('0')" style="grid-column: span 2;">0</button>
+            <button onclick="appendValue('.')">.</button>
+        </div>
+    </div>
+    <script>
+        let display = document.getElementById('display');
+        function appendValue(val) { display.value += val; }
+        function clearDisplay() { display.value = ''; }
+        function deleteLast() { display.value = display.value.slice(0, -1); }
+        function calculate() {
+            try { display.value = eval(display.value); }
+            catch { display.value = 'Error'; }
+        }
+    <\/script>
+</body>
+</html>`,
+                    'style.css': '/* Included in HTML */',
+                    'script.js': '/* Included in HTML */'
+                };
+            }
+            
+            // Generic landing page
+            return {
+                'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${prompt}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0A0E27;
+            color: #fff;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        header {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00F5FF, #FF10F0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p {
+            font-size: 1.25rem;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00F5FF, #FF10F0);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+        .btn:hover { transform: translateY(-3px); }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+        .feature {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+        }
+        .feature h3 {
+            color: #00F5FF;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>${prompt}</h1>
+            <p>Built with Big Bang Studio + DigiD AI</p>
+            <a href="#" class="btn">Get Started</a>
+        </header>
+        <div class="features">
+            <div class="feature">
+                <h3>🚀 Fast</h3>
+                <p>Lightning-fast performance built with modern web technologies.</p>
+            </div>
+            <div class="feature">
+                <h3>✨ Beautiful</h3>
+                <p>Stunning design with glassmorphism and neon aesthetics.</p>
+            </div>
+            <div class="feature">
+                <h3>📱 Responsive</h3>
+                <p>Works perfectly on all devices from mobile to desktop.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+                'style.css': '/* Styles included in HTML */',
+                'script.js': '// Add your JavaScript here'
+            };
+        }
+
+        // Send Prompt
+        document.getElementById('sendBtn').onclick = async () => {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) return;
+
+            // Add user message
+            addMessage('user', prompt);
+            
+            // Save to memory
+            digiDMemory.unshift(prompt);
+            if (digiDMemory.length > 5) digiDMemory.pop();
+            localStorage.setItem('digiDMemory', JSON.stringify(digiDMemory));
+
+            // Show loading
+            const btn = document.getElementById('sendBtn');
+            const btnText = document.getElementById('sendBtnText');
+            btn.disabled = true;
+            btnText.innerHTML = 'DigiD is thinking<span class="loading-dots"><span>.</span><span>.</span></span>';
+            
+            addMessage('digid', 'Generating your project...');
+
+            // Simulate AI delay
+            await new Promise(r => setTimeout(r, 1500));
+
+            // Generate code
+            const files = generateCode(prompt);
+            currentProject.files = files;
+            
+            // Update UI
+            updatePreview(files['index.html']);
+            updateFilesTree(files);
+            
+            // Add DigiD response
+            const lastMsg = document.querySelector('.chat-bubble:last-child');
+            lastMsg.innerHTML = `
+                <div class="font-semibold text-cyan-400 mb-2">DigiD:</div>
+                <div>Created your project! Check the Live Preview on the right.</div>
+                <div class="code-block mt-3">
+                    <div class="text-xs text-gray-400 mb-2">index.html</div>
+                    <pre class="text-xs overflow-x-auto">${files['index.html'].substring(0, 200)}...</pre>
+                </div>
+            `;
+
+            // Reset button
+            btn.disabled = false;
+            btnText.textContent = 'Send to DigiD';
+            document.getElementById('promptInput').value = '';
+            
+            showToast('Project generated successfully!');
+        };
+
+        function addMessage(type, content) {
+            const chatArea = document.getElementById('chatArea');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble glass rounded-xl p-4';
+            if (type === 'user') {
+                bubble.innerHTML = `<div class="font-semibold text-pink-400 mb-2">You:</div><div>${content}</div>`;
+            } else {
+                bubble.innerHTML = `<div class="font-semibold text-cyan-400 mb-2">DigiD:</div><div>${content}</div>`;
+            }
+            chatArea.appendChild(bubble);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function updatePreview(html) {
+            document.getElementById('previewFrame').srcdoc = html;
+        }
+
+        function updateFilesTree(files) {
+            const tree = document.getElementById('filesTree');
+            tree.innerHTML = Object.keys(files).map(file => `
+                <div class="sidebar-item p-2 rounded flex items-center gap-2 cursor-pointer hover:bg-white/10" onclick="showFile('${file}')">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox
