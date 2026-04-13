@@ -1,4 +1,3 @@
-// Serverless handler (Vercel/Node)
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -41,7 +40,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'No HTML generated' });
     }
 
-    // Return { code } to match frontend expectation
+    // Return { code } so frontend can use data.code
     return res.status(200).json({ code: htmlCode });
   } catch (error) {
     console.error('generate error', error);
