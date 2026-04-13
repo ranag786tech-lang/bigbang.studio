@@ -1,12 +1,11 @@
-module.exports = async function handler(req, res) { ... } {
-  // Sirf POST allow karo
-  if (req.method!== 'POST') {
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
-
-  if (!prompt) {
+  const { prompt } = req.body || {};
+  if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
@@ -21,7 +20,7 @@ module.exports = async function handler(req, res) { ... } {
         model: 'llama-3.3-70b-versatile',
         messages: [{
           role: 'user',
-          content: `You are DigiD, an expert full-stack developer. Generate a complete, production-ready single HTML file with inline CSS and JavaScript for: ${prompt}. Output ONLY the HTML code, no explanations, no markdown fences. Use Tailwind CDN if needed. Make it fully functional and responsive.`
+          content: `You are DigiD, an expert full-stack developer. Generate a complete, production-ready single HTML file with inline CSS and JavaScript for: ${prompt}. Output ONLY the HTML code.`
         }],
         temperature: 0.7,
         max_tokens: 4000
@@ -29,14 +28,22 @@ module.exports = async function handler(req, res) { ... } {
     });
 
     if (!response.ok) {
-      throw new Error('Groq API error');
+      const errText = await response.text();
+      console.error('Groq API error', response.status, errText);
+      return res.status(502).json({ error: 'Upstream API error' });
     }
 
     const data = await response.json();
-    const htmlCode = data.choices[0].message.content.trim();
+    const htmlCode = data?.choices?.[0]?.message?.content?.trim() || '';
 
-    res.status(200).json({ html: htmlCode });
+    if (!htmlCode) {
+      return res.status(500).json({ error: 'No HTML generated' });
+    }
+
+    // Return { code } so frontend can use data.code
+    return res.status(200).json({ code: htmlCode });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('generate error', error);
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
-}
+};

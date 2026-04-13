@@ -37,13 +37,37 @@
     </div>
 
     <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="modal-box">
-            <h2>Sign In to Big Bang Studio</h2>
-            <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
-            <button class="close" onclick="closeModal()">Close</button>
-        </div>
+<div class="modal" id="loginModal">
+    <div class="modal-box">
+        <h2>Sign In to Big Bang Studio</h2>
+        <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
+        <button class="google-btn" onclick="signInWithGoogle()">Continue with Google</button>
+        <button class="close" onclick="closeModal()">Close</button>
     </div>
+</div>
+
+<script>
+    async function signInWithGitHub() {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: { redirectTo: window.location.origin + '/playground.html' }
+        });
+        if (error) console.error('GitHub login error:', error);
+    }
+
+    async function signInWithGoogle() {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + '/playground.html' }
+        });
+        if (error) console.error('Google login error:', error);
+    }
+</script>
+
+<style>
+.modal-box .google-btn { background: #4285f4; color: #fff; }
+.modal-box .google-btn:hover { background: #357ae8; }
+</style>
 
 <script>
     const SUPABASE_URL = 'https://tcxwhkwkzekgiurcumjt.supabase.co';

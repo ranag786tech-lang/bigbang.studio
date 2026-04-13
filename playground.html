@@ -88,17 +88,64 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-        <div class="modal-box">
-            <h2>Sign In to Big Bang Studio</h2>
-            <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
-            <div style="text-align: center; margin: 15px 0; color: #666;">or</div>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="signInWithEmail()">Sign In with Email</button>
-            <button onclick="signUpWithEmail()">Sign Up</button>
-            <button class="close" onclick="closeModal()">Close</button>
+<!-- inside the modal, after GitHub button add: -->
+<button class="google-btn" onclick="signInWithGoogle()">Continue with Google</button>
+
+<script>
+// ... earlier code ...
+
+async function signInWithGitHub() {
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: { redirectTo: window.location.origin + '/playground.html' }
+    });
+    if (error) console.error('GitHub login error:', error);
+}
+
+async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/playground.html' }
+    });
+    if (error) console.error('Google login error:', error);
+}
+
+// improved checkUser with safe destructuring and error handling
+async function checkUser() {
+    try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) { console.warn('getUser error', error); return; }
+        const user = data?.user;
+        if (user) {
+            currentUser = user;
+            showProfile();
+            loadProjects();
+        }
+    } catch (err) {
+        console.error('checkUser failed', err);
+    }
+}
+
+// defensive loadProjects
+async function loadProjects() {
+    if (!currentUser) return;
+    try {
+        const { data, error } = await supabase.from('projects')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+        if (error) { console.error('loadProjects error', error); return; }
+        const list = document.getElementById('projectsList');
+        list.innerHTML = (data || []).map(p => `
+            <div class="project-item" onclick="loadProject('${p.id}')">
+                ${String(p.prompt || '').substring(0, 30)}...
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadProjects failed', err);
+    }
+}
+</script>
         </div>
     </div>
 
