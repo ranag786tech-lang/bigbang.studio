@@ -3,337 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Big Bang Studio - One Prompt. Infinite Creation.</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Big Bang Studio - AI App Builder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --space-dark: #0A0E27;
-            --cosmic-purple: #4A0E4E;
-            --neon-cyan: #00F5FF;
-            --electric-pink: #FF10F0;
-            --gold: #FFD700;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-        }
-        * { font-family: 'Space Grotesk', sans-serif; }
-        .font-orbitron { font-family: 'Orbitron', monospace; }
-        body {
-            background: var(--space-dark);
-            background-image: 
-                radial-gradient(ellipse at top, #1B1B3A 0%, transparent 50%),
-                radial-gradient(ellipse at bottom, var(--cosmic-purple) 0%, transparent 50%);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .neon-glow { box-shadow: 0 0 30px rgba(0, 245, 255, 0.4); }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--neon-cyan), var(--electric-pink));
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 245, 255, 0.5);
-        }
-        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-        .floating { animation: float 6s ease-in-out infinite; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        .fade-in { animation: fadeIn 1s ease-in; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; }
+        .header { padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .logo { font-size: 24px; font-weight: 700; color: #3b82f6; }
+        .btn { background: #3b82f6; border: none; color: #fff; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; text-decoration: none; }
+        .btn:hover { background: #2563eb; }
+        .hero { text-align: center; padding: 100px 5%; }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .hero p { font-size: 20px; color: #888; margin-bottom: 40px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-box { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 30px; width: 90%; max-width: 400px; }
+        .modal-box h2 { margin-bottom: 20px; }
+        .modal-box button { width: 100%; background: #3b82f6; border: none; color: #fff; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 10px; }
+        .modal-box .github-btn { background: #24292e; }
+        .modal-box .close { background: #333; }
     </style>
 </head>
-<body class="text-white">
-    <canvas id="starfield"></canvas>
-    
-    <!-- Header -->
-    <header class="glass sticky top-0 z-50 border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center font-orbitron font-bold text-xl">BB</div>
-                <span class="font-orbitron font-bold text-2xl">Big Bang Studio</span>
-            </div>
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="#features" class="hover:text-cyan-400 transition">Features</a>
-                <a href="#pricing" class="hover:text-cyan-400 transition">Pricing</a>
-                <a href="#roadmap" class="hover:text-cyan-400 transition">Roadmap</a>
-                <button id="signInBtn" class="px-6 py-2 glass rounded-full hover:bg-white/10 transition">Sign In</button>
-            </nav>
-        </div>
-    </header>
+<body>
+    <div class="header">
+        <div class="logo">Big Bang Studio</div>
+        <button class="btn" onclick="openModal()">Sign In</button>
+    </div>
 
-    <!-- Hero Section -->
-    <section class="relative z-10 min-h-screen flex items-center justify-center px-4">
-        <div class="max-w-6xl mx-auto text-center fade-in">
-            <div class="floating mb-8">
-                <h1 class="font-orbitron text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight">
-                    One Prompt.<br>
-                    <span class="bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-                        Infinite Creation.
-                    </span>
-                </h1>
-            </div>
-            
-            <p class="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto">
-                Meet <span class="text-cyan-400 font-bold">DigiD</span> — Your All-Rounder AI for Code, Images, Apps, Stories & More.
-            </p>
+    <div class="hero">
+        <h1>Build Apps with AI</h1>
+        <p>Describe your idea. Get production-ready code. No coding required.</p>
+        <a href="/playground.html" class="btn">Start Building Free</a>
+    </div>
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-                <a href="/playground.html" class="btn-primary px-10 py-4 rounded-full text-lg font-bold neon-glow">
-                    Start Building Free
-                </a>
-                <button class="glass px-10 py-4 rounded-full text-lg font-semibold hover:bg-white/10 transition">
-                    Watch Demo
-                </button>
-            </div>
-
-            <div class="glass rounded-3xl p-8 max-w-4xl mx-auto">
-                <div class="aspect-video bg-gradient-to-br from-purple-900/50 to-blue-900/50 rounded-2xl flex items-center justify-center">
-                    <div class="text-center">
-                        <svg class="w-20 h-20 mx-auto mb-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <p class="text-gray-400">Product Demo Video</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features" class="relative z-10 py-24 px-4">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="font-orbitron text-4xl md:text-5xl font-bold text-center mb-16">
-                Powered by <span class="text-cyan-400">DigiD AI</span>
-            </h2>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="glass rounded-2xl p-8 hover:neon-glow transition-all duration-300">
-                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Code Generation</h3>
-                    <p class="text-gray-300">Generate production-ready HTML, CSS, React, and more from natural language prompts.</p>
-                </div>
-
-                <div class="glass rounded-2xl p-8 hover:neon-glow transition-all duration-300">
-                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Image & Video</h3>
-                    <p class="text-gray-300">Create stunning visuals, animations, and videos with AI-powered generation.</p>
-                </div>
-
-                <div class="glass rounded-2xl p-8 hover:neon-glow transition-all duration-300">
-                    <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mb-6">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                    </div>
-                    <h3 class="text-2xl font-bold mb-4">Voice & Music</h3>
-                    <p class="text-gray-300">Generate voiceovers, sound effects, and custom music tracks for your projects.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="relative z-10 py-24 px-4">
-        <div class="max-w-7xl mx-auto">
-            <h2 class="font-orbitron text-4xl md:text-5xl font-bold text-center mb-16">
-                Simple, Transparent Pricing
-            </h2>
-            
-            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <div class="glass rounded-2xl p-8">
-                    <h3 class="text-2xl font-bold mb-2">Free</h3>
-                    <div class="text-4xl font-bold mb-6">$0<span class="text-lg text-gray-400">/month</span></div>
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>10 AI generations/day</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Basic templates</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Community support</li>
-                    </ul>
-                    <a href="/playground.html" class="block w-full glass py-3 rounded-full font-semibold hover:bg-white/10 transition text-center">Get Started</a>
-                </div>
-
-                <div class="glass rounded-2xl p-8 border-2 border-cyan-400 neon-glow relative">
-                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-400 to-pink-500 px-6 py-1 rounded-full text-sm font-bold">POPULAR</div>
-                    <h3 class="text-2xl font-bold mb-2">Pro</h3>
-                    <div class="text-4xl font-bold mb-6">$19<span class="text-lg text-gray-400">/month</span></div>
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Unlimited generations</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Premium templates</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Priority support</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Custom branding</li>
-                    </ul>
-                    <button class="w-full btn-primary py-3 rounded-full font-semibold">Start Pro Trial</button>
-                </div>
-
-                <div class="glass rounded-2xl p-8">
-                    <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
-                    <div class="text-4xl font-bold mb-6">Custom</div>
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Everything in Pro</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Dedicated support</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Custom AI training</li>
-                        <li class="flex items-center gap-3"><svg class="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>SLA guarantee</li>
-                    </ul>
-                    <button class="w-full glass py-3 rounded-full font-semibold hover:bg-white/10 transition">Contact Sales</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Roadmap -->
-    <section id="roadmap" class="relative z-10 py-24 px-4">
-        <div class="max-w-5xl mx-auto">
-            <h2 class="font-orbitron text-4xl md:text-5xl font-bold text-center mb-16">
-                Product Roadmap
-            </h2>
-            
-            <div class="space-y-6">
-                <div class="glass rounded-2xl p-6 border-l-4 border-green-400">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-xl font-bold">Month 1-2: MVP + Landing</h3>
-                        <span class="text-green-400 font-semibold">✓ Complete</span>
-                    </div>
-                    <p class="text-gray-300">Core playground, authentication, project management, live preview</p>
-                </div>
-
-                <div class="glass rounded-2xl p-6 border-l-4 border-cyan-400">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-xl font-bold">Month 3: Real AI Integration</h3>
-                        <span class="text-cyan-400 font-semibold">In Progress</span>
-                    </div>
-                    <p class="text-gray-300">GitHub OAuth, Groq/Gemini API, Database, Real-time generation</p>
-                </div>
-
-                <div class="glass rounded-2xl p-6 border-l-4 border-gray-500">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-xl font-bold">Month 4: DigiD Pro Features</h3>
-                        <span class="text-gray-400 font-semibold">Planned</span>
-                    </div>
-                    <p class="text-gray-300">Image generation, voice synthesis, video creation, advanced templates</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="relative z-10 glass border-t border-white/10 py-12 px-4">
-        <div class="max-w-7xl mx-auto">
-            <div class="grid md:grid-cols-4 gap-8 mb-8">
-                <div>
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center font-orbitron font-bold">BB</div>
-                        <span class="font-orbitron font-bold text-xl">Big Bang Studio</span>
-                    </div>
-                    <p class="text-gray-400 text-sm">One Prompt. Infinite Creation.</p>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold mb-4">Product</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#features" class="hover:text-cyan-400 transition">Features</a></li>
-                        <li><a href="#pricing" class="hover:text-cyan-400 transition">Pricing</a></li>
-                        <li><a href="#roadmap" class="hover:text-cyan-400 transition">Roadmap</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold mb-4">Company</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-cyan-400 transition">About</a></li>
-                        <li><a href="#" class="hover:text-cyan-400 transition">Blog</a></li>
-                        <li><a href="#" class="hover:text-cyan-400 transition">Careers</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold mb-4">Legal</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-cyan-400 transition">Privacy</a></li>
-                        <li><a href="#" class="hover:text-cyan-400 transition">Terms</a></li>
-                        <li><a href="#" class="hover:text-cyan-400 transition">Security</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="border-t border-white/10 pt-8 text-center text-gray-400 text-sm">
-                <p>© 2026 RANA Hamza Pvt Ltd. All Rights Reserved. DigitalDairy786™</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Sign In Modal -->
-    <div id="signInModal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-        <div class="glass rounded-2xl p-8 max-w-md w-full">
-            <h2 class="font-orbitron text-2xl font-bold mb-6">Sign In to Big Bang Studio</h2>
-            <input type="email" id="emailInput" placeholder="Email address" class="w-full glass rounded-lg px-4 py-3 mb-4 text-white placeholder-gray-400">
-            <button id="emailSignIn" class="w-full btn-primary py-3 rounded-lg font-semibold mb-4">Continue with Email</button>
-            <div class="text-center text-gray-400 text-sm mb-4">or</div>
-            <button class="w-full glass py-3 rounded-lg font-semibold mb-2 hover:bg-white/10">Continue with Google</button>
-            <button class="w-full glass py-3 rounded-lg font-semibold mb-4 hover:bg-white/10">Continue with GitHub</button>
-            <button id="closeModal" class="w-full text-gray-400 text-sm">Cancel</button>
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-box">
+            <h2>Sign In to Big Bang Studio</h2>
+            <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
+            <button class="close" onclick="closeModal()">Close</button>
         </div>
     </div>
 
-    <script>
-        // Starfield
-        const canvas = document.getElementById('starfield');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const stars = Array.from({length: 200}, () => ({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            size: Math.random() * 2,
-            speed: Math.random() * 0.5
-        }));
-        function animateStars() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            stars.forEach(star => {
-                ctx.fillStyle = 'rgba(255, 255, 255, ' + star.size / 2 + ')';
-                ctx.fillRect(star.x, star.y, star.size, star.size);
-                star.y += star.speed;
-                if (star.y > canvas.height) star.y = 0;
-            });
-            requestAnimationFrame(animateStars);
-        }
-        animateStars();
+<script>
+    const SUPABASE_URL = 'https://tcxwhkwkzekgiurcumjt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeHdoa3dremVrZ2l1cmN1bWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNjk0NDEsImV4cCI6MjA5MTY0NTQ0MX0.iVV5gFCMUmzbscTxyY9qNGU0Tg0AzTozrLYbiLSp_kI';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Sign In Modal - FIXED
-        const signInBtn = document.getElementById('signInBtn');
-        const signInModal = document.getElementById('signInModal');
-        const closeModal = document.getElementById('closeModal');
-        const emailSignIn = document.getElementById('emailSignIn');
-        
-        signInBtn.onclick = () => {
-            signInModal.classList.remove('hidden');
-            signInModal.classList.add('flex');
-        };
-        closeModal.onclick = () => {
-            signInModal.classList.add('hidden');
-            signInModal.classList.remove('flex');
-        };
-        emailSignIn.onclick = () => {
-            // Abhi ke liye seedha playground pe bhej do
-            window.location.href = '/playground.html';
-        };
+    // Check if already logged in
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session) window.location.href = '/playground.html';
+    });
 
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) target.scrollIntoView({ behavior: 'smooth' });
-            });
+    function openModal() { document.getElementById('loginModal').classList.add('active'); }
+    function closeModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+    async function signInWithGitHub() {
+        await supabase.auth.signInWithOAuth({ 
+            provider: 'github',
+            options: { redirectTo: 'https://bigbang-studio.vercel.app/playground.html' }
         });
-    </script>
+    }
+</script>
 </body>
 </html>
