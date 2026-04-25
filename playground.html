@@ -1,3 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playground - Big Bang Studio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; height: 100vh; overflow: hidden; display: flex; }
+
+        /* Sidebar */
+        .sidebar { width: 300px; background: #111; border-right: 1px solid #333; display: flex; flex-direction: column; transition: transform 0.3s; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .projects-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .project-item { padding: 12px; background: #1a1a1a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; border: 1px solid transparent; }
+        .project-item:hover { border-color: #3b82f6; }
+
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .header { padding: 15px 30px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .user-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+        .user-profile img { width: 32px; height: 32px; border-radius: 50%; }
+
+        .content { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 20px; }
+        .prompt-area { display: flex; gap: 10px; }
+        #prompt { flex: 1; background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        #generateBtn { background: #3b82f6; color: #fff; border: none; padding: 0 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        #generateBtn:disabled { opacity: 0.5; }
+
+        .preview-container { flex: 1; background: #fff; border-radius: 12px; overflow: hidden; }
+        #preview { width: 100%; height: 100%; border: none; }
+
+        /* Profile Dropdown */
+        .dropdown { display: none; position: absolute; top: 100%; right: 0; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 8px; z-index: 100; min-width: 150px; }
+        .dropdown.active { display: block; }
+        .dropdown button { background: none; border: none; color: #ff4444; width: 100%; text-align: left; padding: 8px; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 1000; transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>My Projects</h3>
+            <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; cursor:pointer;">✕</button>
+        </div>
+        <div class="projects-list" id="projectsList"></div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">☰</button>
+                <h2 style="color:#3b82f6;">Big Bang Studio</h2>
+            </div>
+            <div class="user-profile" id="profile" style="display:none;">
+                <span id="userName"></span>
+                <img id="userAvatar" src="" alt="Avatar">
+                <div class="dropdown" id="profileDropdown">
+                    <button onclick="signOut()">Sign Out</button>
+                </div>
+            </div>
+            <button id="loginBtn" class="btn" onclick="openModal()" style="background:#3b82f6; border:none; color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer;">Sign In</button>
+        </div>
+
+        <div class="content">
+            <div class="prompt-area">
+                <input type="text" id="prompt" placeholder="Describe the app you want to build...">
+                <button id="generateBtn" onclick="generateCode()">Generate</button>
+            </div>
+            <div class="preview-container">
+                <iframe id="preview"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <style>
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1001; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-box { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 30px; width: 90%; max-width: 400px; }
+        .modal-box button { width: 100%; background: #3b82f6; border: none; color: #fff; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 10px; }
+        .modal-box .github-btn { background: #24292e; }
+        .modal-box .close { background: #333; }
+    </style>
+    <div class="modal" id="loginModal">
+        <div class="modal-box">
+            <h2>Sign In</h2>
+            <button class="github-btn" onclick="signInWithGitHub()">Continue with GitHub</button>
+            <button class="google-btn" onclick="signInWithGoogle()">Continue with Google</button>
+            <button class="close" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
 <script>
     const SUPABASE_URL = 'https://gjlugafyrznldyoarfil.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_M_2aRHByQF6Orqla716ztQ_TMqG6PUK';
@@ -17,19 +115,15 @@
         }
     });
 
-    // Check user on page load
     async function checkUser() {
         try {
             const { data: { user }, error } = await supabase.auth.getUser();
-            if (error) { console.warn('getUser error', error); return; }
             if (user) {
                 currentUser = user;
                 showProfile();
                 loadProjects();
             }
-        } catch (err) {
-            console.error('checkUser failed', err);
-        }
+        } catch (err) { console.error(err); }
     }
     checkUser();
 
@@ -45,43 +139,21 @@
         document.getElementById('profile').style.display = 'none';
     }
 
-    // Modal
     function openModal() { document.getElementById('loginModal').classList.add('active'); }
     function closeModal() { document.getElementById('loginModal').classList.remove('active'); }
 
-    // Auth Functions - SIRF EK BAAR
     async function signInWithGitHub() {
-        const { error } = await supabase.auth.signInWithOAuth({ 
+        await supabase.auth.signInWithOAuth({
             provider: 'github',
-            options: {
-                redirectTo: 'https://bigbang-studio.vercel.app/playground.html'
-            }
+            options: { redirectTo: window.location.origin + '/playground.html' }
         });
-        if (error) alert('GitHub login error: ' + error.message);
     }
 
     async function signInWithGoogle() {
-        const { error } = await supabase.auth.signInWithOAuth({
+        await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: 'https://bigbang-studio.vercel.app/playground.html' }
+            options: { redirectTo: window.location.origin + '/playground.html' }
         });
-        if (error) alert('Google login error: ' + error.message);
-    }
-
-    async function signInWithEmail() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else closeModal();
-    }
-
-    async function signUpWithEmail() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) alert(error.message);
-        else { alert('Check your email to confirm!'); closeModal(); }
     }
 
     async function signOut() {
@@ -89,22 +161,21 @@
         document.getElementById('profileDropdown').classList.remove('active');
     }
 
-    // Profile Dropdown
-    document.getElementById('profile').onclick = () => {
+    document.getElementById('profile').onclick = (e) => {
+        e.stopPropagation();
         document.getElementById('profileDropdown').classList.toggle('active');
     }
+    window.onclick = () => document.getElementById('profileDropdown').classList.remove('active');
 
-    // Sidebar
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
     }
 
-    // Generate Code
     async function generateCode() {
         if (!currentUser) return openModal();
         
         const prompt = document.getElementById('prompt').value;
-        if (!prompt) return alert('Prompt likho bhai!');
+        if (!prompt) return alert('Please enter a prompt!');
         
         const btn = document.getElementById('generateBtn');
         btn.disabled = true;
@@ -118,9 +189,10 @@
             });
             const data = await res.json();
             
+            if (data.error) throw new Error(data.error);
+
             document.getElementById('preview').srcdoc = data.code;
             
-            // Save to database
             await supabase.from('projects').insert({
                 user_id: currentUser.id,
                 prompt: prompt,
@@ -136,30 +208,31 @@
         btn.textContent = 'Generate';
     }
 
-    // Load Projects
     async function loadProjects() {
         if (!currentUser) return;
-        try {
-            const { data, error } = await supabase.from('projects')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('created_at', { ascending: false });
-            if (error) { console.error('loadProjects error', error); return; }
-            const list = document.getElementById('projectsList');
-            list.innerHTML = (data || []).map(p => `
-                <div class="project-item" onclick="loadProject('${p.id}')">
-                    ${String(p.prompt || '').substring(0, 30)}...
-                </div>
-            `).join('');
-        } catch (err) {
-            console.error('loadProjects failed', err);
-        }
+        const { data, error } = await supabase.from('projects')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+
+        if (error) { console.error(error); return; }
+
+        const list = document.getElementById('projectsList');
+        list.innerHTML = (data || []).map(p => `
+            <div class="project-item" onclick="loadProject('${p.id}')">
+                ${String(p.prompt || '').substring(0, 30)}...
+            </div>
+        `).join('');
     }
 
     async function loadProject(id) {
         const { data } = await supabase.from('projects').select('*').eq('id', id).single();
-        document.getElementById('preview').srcdoc = data.code;
-        document.getElementById('prompt').value = data.prompt;
+        if (data) {
+            document.getElementById('preview').srcdoc = data.code;
+            document.getElementById('prompt').value = data.prompt;
+        }
         if (window.innerWidth < 768) toggleSidebar();
     }
 </script>
+</body>
+</html>

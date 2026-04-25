@@ -34,7 +34,10 @@ module.exports = async (req, res) => {
     }
 
     const data = await response.json();
-    const htmlCode = data?.choices?.[0]?.message?.content?.trim() || '';
+    let htmlCode = data?.choices?.[0]?.message?.content?.trim() || '';
+    if (htmlCode.startsWith("```")) {
+      htmlCode = htmlCode.replace(/^```[a-z]*\n/i, "").replace(/\n```$/m, "").trim();
+    }
 
     if (!htmlCode) {
       return res.status(500).json({ error: 'No HTML generated' });
